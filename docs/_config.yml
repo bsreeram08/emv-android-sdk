@@ -7,3 +7,5 @@ search_enabled: true
 aux_links:
   "Issues": "https://github.com/bsreeram08/emv-android-sdk/issues"
 footer_content: "Copyright © 2026. All rights reserved. The SDK is commercial software, licensed separately."
+mermaid:
+  version: "10.9.1"

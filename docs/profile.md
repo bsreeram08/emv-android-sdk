@@ -1,6 +1,6 @@
 ---
 title: Terminal profile
-nav_order: 5
+nav_order: 6
 ---
 
 # Terminal profile

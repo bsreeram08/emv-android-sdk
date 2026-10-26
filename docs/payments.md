@@ -1,6 +1,6 @@
 ---
 title: Accepting a payment
-nav_order: 4
+nav_order: 5
 ---
 
 # Accepting a payment
@@ -15,17 +15,17 @@ EmvSdk.prepareSale(amountMinor)
 
 A profile you configure always draws a fresh unpredictable number for each transaction.
 
-**Never send the default profile's results to a real host.** If you never call `EmvSdk.load`, or after `AcceptProfile.configure("")`, the SDK uses its built-in synthetic test profile. That profile pins the unpredictable number so tests are repeatable, which means a cryptogram made with it could be replayed. Use it only with a simulated host.
+**The test profile never reaches a real host.** `AcceptProfile.configure("")` selects the built-in test profile. It pins the unpredictable number so tests are repeatable, which means a cryptogram made with it could be replayed. The SDK refuses to send a sale made with it to any host except the simulated one, with `SafeError.SYNTHETIC_PROFILE`. If you never load a configuration, sales use built-in placeholder terminal data with a fresh unpredictable number; load your own profile before going live.
 
 ## 2. Run the sale on the connected card
 
 When `SessionState.Ready` arrives, call `runAccept`:
 
 ```kotlin
-controller.runAccept(sessionId, host) { state ->
+controller.runAccept(sessionId) { state ->
     when (state) {
-        is AcceptState.Exchanging -> showProgress(state.stage)       // PPSE, SELECT, GPO, RECORDS, ...
-        is AcceptState.OnlineRequest -> showSendingToHost()           // the success tone has played; the card can be removed
+        is AcceptState.Exchanging -> showProgress(state.stage)        // PPSE, SELECT, GPO, RECORDS, ...
+        is AcceptState.OnlineRequest -> showCard(state.card)           // masked card; the success tone has played
         is AcceptState.Complete -> showResult(state.outcome, state.responseCode)
         is AcceptState.HostFailure -> showHostProblem(state.reason)
         is AcceptState.Failure -> showError(state.error, state.outcome)
@@ -33,28 +33,21 @@ controller.runAccept(sessionId, host) { state ->
 }
 ```
 
-The card part usually takes a fraction of a second. Ask the customer to hold the card still until you receive `OnlineRequest` or a failure.
+The card part usually takes a fraction of a second. Ask the customer to hold the card still until you receive `OnlineRequest` or a failure. Every state carries the `sessionId` of its sale, so one handler can serve every sale safely.
 
-## 3. Authorise with your host
+## 3. Your host
 
-`HostClient` is a single function. The SDK calls it on its own background thread, so it can block on the network:
+The SDK talks to your payment host itself. You configure where it is in the [configuration](configuration.md#host), and the SDK:
 
-```kotlin
-val host = HostClient { request ->
-    val contract = request.contract()
-    // contract.scheme, applicationId, pan, expiry, amount, currency, cryptogram
-    // request.paymentRequestJson: the full kernel-built request (ISO 8583 0100 hex, DE 55, all tags)
-    when (val answer = myGateway.authorize(request.paymentRequestJson)) {
-        is Ok -> HostResult.Approved(answer.responseCode, answer.body)
-        is Refused -> HostResult.Declined(answer.responseCode, answer.body)
-        is Timeout -> HostResult.Failed(HostFailureReason.TIMEOUT)
-    }
-}
-```
+- enrols the phone once, with its hardware-attested device key;
+- seals each request inside its payment core, signs it with the device key, and sends it;
+- opens the host's sealed answer and reports it as `Complete` or `HostFailure`.
 
-- The kernel builds the request, and your code does not assemble card fields. `OnlineRequestContract` lists the fields you can depend on across versions.
-- The `toString()` of the request, the contract, and every `HostResult` is redacted, so logging one by mistake does not leak card data.
-- Use `HostResult.Failed` for transport problems. The SDK then reports `AcceptState.HostFailure` and never approves.
+Your app never receives the card number, expiry, track data, cryptogram or the online request. It gets a `CardSummary` instead: scheme, application, masked card number (at most the first 6 and last 4 digits), amount and currency. The host side runs the gateway library we provide to licensed customers, which opens the sealed requests and connects to your processor.
+
+- Once the request has been sent, the sale can no longer be cancelled; its answer always reaches its own sale.
+- A transport problem ends as `HostFailure` (for example `TIMEOUT` or `TRANSPORT`) and never as an approval.
+- Release builds only talk to an `https` host whose key matches the pinned fingerprints.
 
 ## 4. The result
 

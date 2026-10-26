@@ -1,6 +1,6 @@
 ---
 title: Configuration
-nav_order: 3
+nav_order: 4
 ---
 
 # Configuration: one JSON document
@@ -43,6 +43,7 @@ EmvSdk.prepareSale(amountMinor)   // before each sale
 |---|---|---|
 | `version` | yes | Must be `1`. |
 | `profile` | yes | The terminal profile. See [Terminal profile](profile.md). |
+| `host` | yes for live sales | `{"url": "https://…", "keySha256": "<fingerprint>"}` or two fingerprints `["<current>", "<next>"]` for key rotation. Release builds require `https`. See [Host](#host). |
 | `feedback` | no | The tap sound and vibration (below). If the document has no `feedback`, the current settings stay as they are, so a cardholder's settings switch survives a configuration swap. |
 
 ## How loading behaves
@@ -54,7 +55,15 @@ EmvSdk.prepareSale(amountMinor)   // before each sale
 - **Errors you can act on.** A malformed document throws `EmvConfigException`. Its `field` names the problem, for example `feedback.volume`. The JSON must be strict: comments, single quotes, unquoted keys, duplicate keys at any depth, unknown fields, wrong types and data after the document are all rejected. The profile reaches the kernel exactly as you wrote it. When the kernel rejects the profile itself, `load` throws `SafeApduException`, with the EMV outcome when there is one.
 - **Any thread.** Call `load` from any thread, for example right after your remote config arrives.
 
-`prepareSale(amountMinor)` installs the profile with the sale amount (9F02, DE 4). Until the first `prepareSale`, the SDK keeps its synthetic test profile. If the profile doesn't set `utcOffsetMinutes`, it uses the device's time zone. Call it before `runAccept`.
+`prepareSale(amountMinor)` installs the profile with the sale amount (9F02, DE 4). Until the first `prepareSale`, sales use built-in placeholder terminal data, still with a fresh unpredictable number. If the profile doesn't set `utcOffsetMinutes`, it uses the device's time zone. Call it before `runAccept`.
+
+## Host
+
+```json
+"host": {"url": "https://gateway.example.com", "keySha256": ["<current key SHA-256>", "<next key SHA-256>"]}
+```
+
+The SDK only enrols with, and only seals card data to, a host whose key matches one of the pinned fingerprints. Two pins let your gateway rotate its key with no outage. The enrolment token for the first enrolment is set in code (`EmvSdk.enrolmentToken`), never in the JSON.
 
 ## Tap feedback
 

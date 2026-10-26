@@ -1,14 +1,16 @@
 ---
 title: Security
-nav_order: 8
+nav_order: 9
 ---
 
 # Security
 
+For how the pieces fit together, see [Architecture and security](architecture.md).
+
 ## What the SDK does
 
 - **Clears card data from memory as soon as it is used.** Card commands, card answers, and kernel buffers are overwritten after each step, and the kernel drops its card data when a transaction ends.
-- **Redacts card data from logs.** `toString()` on `AcceptOnlineRequest`, `OnlineRequestContract`, `HostResult`, and `AcceptState.Complete` and `HostFailure` leaves out the PAN, expiry, track data, cryptogram, and issuer data.
+- **Never hands card data to your app.** The online request is built and sealed inside the payment core; the app layer gets only a masked card summary and the result. Release builds contain no code path that copies card data out.
 - **Keeps card data out of diagnostics.** `NfcStatus`, `NfcEvent`, and `TapTimingReport` hold no tag ID, no card command or answer bytes, and no card fields.
 - **Gives safe errors.** A `SafeError` never carries platform exception text.
 - **Uses a fresh unpredictable number for each transaction** whenever you configure a profile. A profile cannot pin it.
@@ -17,9 +19,9 @@ nav_order: 8
 ## What your app must do
 
 - **Protect payment screens** with `FLAG_SECURE`. On Android 13+, also call `setRecentsScreenshotEnabled(false)`.
-- **Don't log** the fields of `OnlineRequestContract` or `paymentRequestJson`. They are card data.
+- **Pin your host keys** in the configuration and serve the host over `https`.
 - **Send the online request only over an authenticated, encrypted channel** to your host. Keep it in memory only, and only as long as the call needs it.
-- **Never use the built-in synthetic profile with a real host.** See [Accepting a payment](payments.md#1-set-the-profile).
+- **Load your own profile before going live.** The built-in test profile is refused for any real host (`SYNTHETIC_PROFILE`). See [Accepting a payment](payments.md#1-set-the-amount).
 - **Ship release builds as non-debuggable.** Some SDK logging switches itself on only in debuggable builds.
 - **Meet your PCI obligations.** Using this SDK does not by itself make your app or system PCI DSS, PCI MPoC, or scheme compliant.
 
