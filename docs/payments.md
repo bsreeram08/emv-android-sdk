@@ -59,14 +59,16 @@ If the answer does not arrive (a timeout, a dropped connection, a server error, 
 - `HostFailure` with `REVERSED` when the outcome stayed unknown and the SDK reversed the sale: nothing was charged; take the payment again;
 - `HostFailure` with `UNRESOLVED` when not even the reversal could be confirmed. The card may have been charged. Don't take the payment again until it is resolved: the SDK keeps sending the reversal each time it starts.
 
-The SDK never reports a failure for a sale the host said it approved. The record it keeps holds no card data, only the ids, amount, currency, times and state.
+The SDK never reports a failure for a sale the host approved and you were shown. An approval you were never shown complete does not stand: if the app was closed mid-sale and the host had approved, the SDK reverses that sale at the next start. The record it keeps holds no card data, only the ids, amount, currency, times and state.
 
 Sales left open by a lost reversal, or by the app being closed mid-sale, are resumed in the background when the reader starts (the first `onResume`). Set a listener to hear how they end:
 
 ```kotlin
 controller.transactionListener = TransactionListener { record ->
     // record.transactionId, record.stan, record.amount, record.currency,
-    // record.state: RESOLVED (record.decision "approved" or "declined"), REVERSED or UNRESOLVED
+    // record.state: RESOLVED (record.decision "approved" or "declined"), REVERSED or UNRESOLVED;
+    // record.approvedThenReversed: the host had approved it, the sale was interrupted, and the
+    // SDK reversed it (no charge stands once state is REVERSED)
     reconcile(record)
 }
 ```
