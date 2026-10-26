@@ -43,7 +43,7 @@ EmvSdk.prepareSale(amountMinor)   // before each sale
 |---|---|---|
 | `version` | yes | Must be `1`. |
 | `profile` | yes | The terminal profile. See [Terminal profile](profile.md). |
-| `host` | yes for live sales | `{"url": "https://…", "keySha256": "<fingerprint>"}` or two fingerprints `["<current>", "<next>"]` for key rotation. Release builds require `https`. See [Host](#host). |
+| `host` | yes for live sales | `{"url": "https://…"}`, optionally with `"keySha256": "<fingerprint>"` or `["<current>", "<next>"]` as an extra pin. Release builds require `https`. See [Host](#host). |
 | `feedback` | no | The tap sound and vibration (below). If the document has no `feedback`, the current settings stay as they are, so a cardholder's settings switch survives a configuration swap. |
 
 ## How loading behaves
@@ -60,10 +60,21 @@ EmvSdk.prepareSale(amountMinor)   // before each sale
 ## Host
 
 ```json
+"host": {"url": "https://gateway.example.com"}
 "host": {"url": "https://gateway.example.com", "keySha256": ["<current key SHA-256>", "<next key SHA-256>"]}
 ```
 
-The SDK only enrols with, and only seals card data to, a host whose key matches one of the pinned fingerprints. Two pins let your gateway rotate its key with no outage. The enrolment token for the first enrolment is set in code (`EmvSdk.enrolmentToken`), never in the JSON.
+**Trust root.** Your gateway's key must carry a certificate issued from the vendor root that is built into the SDK. The SDK's payment core checks that certificate itself and seals card data to no other key, so a changed configuration or a network attacker cannot redirect card data. Your gateway serves the certificate; it renews and rotates its key without any change on the phone: the SDK fetches the new certified key by itself, and never enrols again for it.
+
+**Pins (optional).** `keySha256` lists up to two SHA-256 fingerprints of the gateway key. With pins, a certified key must also match one of them. Two pins let you rotate with no outage; leave them out to rely on the trust root alone.
+
+**Activation.** Each terminal is activated once with a one-time code your gateway issues for one terminal of one merchant (`XXXX-XXXX-XXXX-XXXX`). Pass it in code, never in the JSON:
+
+```kotlin
+EmvSdk.activate(code, merchantId = "M-100") // merchantId is optional: a code for another merchant is refused
+```
+
+The next sale that needs it enrols with the code. The gateway binds the terminal to the code's merchant and terminal ID; those, not the IDs in your terminal profile, are what your processor sees. The code is held in memory only, never logged or stored, and is forgotten once used. If the network drops the activation's answer, the next sale resends it and gets the same terminal. Codes are single use and expire (by default after 72 hours). A terminal the gateway no longer knows reports `ENROLMENT` and needs a new code; release builds never enrol again by themselves.
 
 ## Tap feedback
 

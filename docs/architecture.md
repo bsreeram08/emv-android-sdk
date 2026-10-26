@@ -67,12 +67,13 @@ sequenceDiagram
 - The SDK's public API has no field that holds a full card number, expiry, track data, cryptogram or the cleartext online request. Your app gets a masked summary only.
 - The online request is encrypted inside the SDK with AES-256-GCM, under a key agreed for this transaction alone (ECDH P-256, then HKDF-SHA-256). Each request is bound to the terminal, a transaction number and a timestamp, and signed by the device key. A host can detect a replayed, altered or forwarded request.
 - The answer is encrypted under a key that only this request's exchange knows. An answer that doesn't decrypt, or names another transaction, is never treated as an approval.
-- The host's key is pinned by its fingerprint in your configuration, so the SDK won't talk to an impostor.
+- The host's key must carry a certificate chain to a vendor root built into the SDK. The payment core verifies it and seals to no other key; configuration pins are an optional extra check. The SDK picks up a rotated host key by itself, without enrolling again.
 - Card buffers and keys are overwritten as soon as each step has used them. When a sale ends, the payment core drops everything it read from the card.
 
 **The device**
 - The device key lives in secure hardware, StrongBox when the phone has it, and can't be exported.
 - At enrolment, the phone proves where the key lives with hardware key attestation, checked against Google's attestation roots.
+- A terminal is activated once with a single-use, expiring code bound to one merchant. Your processor sees the merchant and terminal IDs bound at activation, never IDs from the app's configuration.
 - Payment screens can be protected from screenshots, the recent-apps view and overlays.
 
 **Configuration**
@@ -92,7 +93,7 @@ sequenceDiagram
 | Hardware device key with attestation at enrolment | Shipping |
 | Attestation checked at enrolment and on every payment (verified chain, hardware key, verified boot, app identity, revocation) | Shipping |
 | Phone-wallet sales above the cardholder verification limit | Shipping |
-| Host keys certified by a vendor root built into the SDK; single-use terminal activation codes | In progress |
+| Host keys certified by a vendor root built into the SDK; single-use terminal activation codes; host key rotation without re-enrolment | Built; pending the vendor root ceremony and device verification |
 | Durable recovery of a sale whose host answer is lost (status query, reversal) | In progress |
 | PIN entry on the phone screen, test grade | Planned |
 | PIN entry for production, under PCI MPoC | Planned; needs certification |
