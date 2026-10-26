@@ -40,6 +40,7 @@ class PayActivity : Activity() {
         // Keep card data off screenshots and the recents screen.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         super.onCreate(savedInstanceState)
+        EmvSdk.load(configJson)   // see Configuration; any time before the first sale
         controller.diagnosticsListener = NfcEventListener { event -> /* optional, see Diagnostics */ }
     }
 
@@ -88,4 +89,4 @@ Each card that touches the phone gets a new `sessionId`. A call with an old `ses
 
 If NFC is switched off, the SDK reports `Failure(null, NFC_DISABLED)`. When NFC is switched back on while your screen is open, reader mode turns back on by itself.
 
-Next: [Accepting a payment](payments.md).
+Next: [Configuration](configuration.md), then [Accepting a payment](payments.md).

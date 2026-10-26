@@ -30,13 +30,15 @@ This site and the [issue tracker](https://github.com/bsreeram08/emv-android-sdk/
 |---|---|
 | `NfcSessionController` | Owns reader mode, the card connection, timeouts, and one card run at a time. |
 | `runAccept` + `HostClient` | Runs a contactless sale. Your `HostClient` receives the kernel-built online request and returns approved, declined, or failed. |
-| `AcceptProfile` | Sets the terminal profile: amounts, limits, the AIDs it accepts, and merchant and terminal data. |
+| `EmvSdk` | Configures the whole SDK from one JSON document (terminal profile and tap feedback). You can swap it live, with no restart. |
+| `TapCue` | Plays the EMV Book A success and alert tones, each with a vibration. You can switch either off. |
 | `NfcDiagnostics` and `NfcEvent` | Report NFC readiness and an event for each tap, for support screens. They carry no card data. |
 | `SafeError` and `AcceptOutcome` | Name every failure, without platform or card text. |
 
 ## Pages
 
 - [Getting started](getting-started.md): requirements, manifest, and lifecycle.
+- [Configuration](configuration.md): the one-JSON configuration, live swapping, and tap sound and vibration.
 - [Accepting a payment](payments.md): the sale flow, the host, and cancelling.
 - [Terminal profile](profile.md): the profile JSON.
 - [NFC diagnostics](diagnostics.md): readiness, tap events, timing, and troubleshooting.

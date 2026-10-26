@@ -1,11 +1,11 @@
 ---
 title: Terminal profile
-nav_order: 4
+nav_order: 5
 ---
 
 # Terminal profile
 
-`AcceptProfile.configure(json)` checks the profile and applies it to every sale started afterwards. An invalid profile throws `SafeApduException`. When the cause is an EMV outcome, the exception's `outcome` says which one, for example a profile that allows no card. The SDK rejects unknown fields and anything after the JSON document.
+The profile is the `profile` object of the [configuration document](configuration.md). The SDK sets `amountMinor` for each sale with `EmvSdk.prepareSale`, so you can leave it out of the document. `AcceptProfile.configure(json)` also takes a profile on its own; it checks the profile and applies it to every sale started afterwards. An invalid profile throws `SafeApduException`. When the cause is an EMV outcome, the exception's `outcome` says which one, for example a profile that allows no card. The SDK rejects unknown fields and anything after the JSON document.
 
 ## Example
 
@@ -38,7 +38,7 @@ nav_order: 4
 
 | Field | Type | Meaning |
 |---|---|---|
-| `amountMinor` | integer | Sale amount in minor units (cents, öre). Set it for every sale. |
+| `amountMinor` | integer | Sale amount in minor units (cents, öre). `EmvSdk.prepareSale` sets it for each sale. |
 | `currencyCode` | integer | ISO 4217 numeric currency code |
 | `countryCode` | integer | ISO 3166 numeric country code of the terminal |
 | `transactionType` | integer | `0` for a purchase |

@@ -1,21 +1,21 @@
 ---
 title: Accepting a payment
-nav_order: 3
+nav_order: 4
 ---
 
 # Accepting a payment
 
-## 1. Set the profile
+## 1. Set the amount
 
-Before each sale, apply your terminal profile with the sale amount:
+Load your configuration once, as described in [Configuration](configuration.md). Then set the amount before each sale:
 
 ```kotlin
-AcceptProfile.configure(profileJson)   // throws SafeApduException if the profile is invalid
+EmvSdk.prepareSale(amountMinor)
 ```
 
-See [Terminal profile](profile.md) for the fields. A profile you configure always draws a fresh unpredictable number for each transaction.
+A profile you configure always draws a fresh unpredictable number for each transaction.
 
-**Never send the default profile's results to a real host.** With no profile, or after `configure("")`, the SDK uses its built-in synthetic test profile. That profile pins the unpredictable number so tests are repeatable, which means a cryptogram made with it could be replayed. Use it only with a simulated host.
+**Never send the default profile's results to a real host.** If you never call `EmvSdk.load`, or after `AcceptProfile.configure("")`, the SDK uses its built-in synthetic test profile. That profile pins the unpredictable number so tests are repeatable, which means a cryptogram made with it could be replayed. Use it only with a simulated host.
 
 ## 2. Run the sale on the connected card
 
@@ -25,7 +25,7 @@ When `SessionState.Ready` arrives, call `runAccept`:
 controller.runAccept(sessionId, host) { state ->
     when (state) {
         is AcceptState.Exchanging -> showProgress(state.stage)       // PPSE, SELECT, GPO, RECORDS, ...
-        is AcceptState.OnlineRequest -> showSendingToHost()           // the card can be removed now
+        is AcceptState.OnlineRequest -> showSendingToHost()           // the success tone has played; the card can be removed
         is AcceptState.Complete -> showResult(state.outcome, state.responseCode)
         is AcceptState.HostFailure -> showHostProblem(state.reason)
         is AcceptState.Failure -> showError(state.error, state.outcome)
@@ -65,7 +65,7 @@ val host = HostClient { request ->
 - `recordsRead`;
 - `dataRecordDigest`: a hash you can use as a receipt reference. It is not card data.
 
-After `Complete` or `HostFailure`, the session returns to `Ready` on the same card. After any other failure, the card connection ends, and the next sale starts at the next tap.
+After any result, the card connection ends and the controller returns to `WaitingForTag`, so the next sale always starts with a new tap. If the card read fails (for example the card is removed too early), the reader stays on: ask the customer to tap again.
 
 ## Cancelling
 
