@@ -1,0 +1,20 @@
+name: Access request
+description: Ask about a licence for the SDK.
+labels: [access]
+body:
+  - type: markdown
+    attributes:
+      value: The SDK is commercial software, delivered to licensed customers through authenticated, signed downloads. Tell us about your use case and we'll be in touch. This issue is public, so don't include anything confidential.
+  - type: input
+    id: org
+    attributes:
+      label: Company or project
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: Use case
+      description: Your markets, card schemes, expected volume, and target phones.
+    validations:
+      required: true

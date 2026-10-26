@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://bsreeram08.github.io/emv-android-sdk/
+    about: Read the SDK documentation first.

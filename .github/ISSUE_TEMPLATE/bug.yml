@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in the SDK doesn't work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never post card data.** That includes PANs, expiry dates, track data, cryptograms, online requests, APDU logs, photos of cards, keys, and credentials. Security problems go to private vulnerability reporting, not here.
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model and Android version
+      placeholder: Pixel 8, Android 15
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SDK version
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: Include the SafeError or AcceptOutcome, and what the screen showed.
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: NfcDiagnostics.status
+      render: text
+  - type: textarea
+    id: events
+    attributes:
+      label: NfcEvent list and Tap JSON for the failing tap
+      render: text
+  - type: input
+    id: card
+    attributes:
+      label: Card type (not the number)
+      placeholder: Mastercard debit, contactless
+  - type: input
+    id: rate
+    attributes:
+      label: How often
+      placeholder: 3 of 10 taps; other cards fine
+  - type: checkboxes
+    id: nocarddata
+    attributes:
+      label: Card data
+      options:
+        - label: This report contains no card data, keys, or credentials.
+          required: true
