@@ -90,8 +90,10 @@ sequenceDiagram
 |---|---|
 | Sealed card data inside the SDK | Shipping |
 | Hardware device key with attestation at enrolment | Shipping |
-| Enrolment that requires verified attestation (no revoked keys, verified boot) | In progress |
-| Phone-wallet sales above the cardholder verification limit | In progress |
+| Attestation checked at enrolment and on every payment (verified chain, hardware key, verified boot, app identity, revocation) | Shipping |
+| Phone-wallet sales above the cardholder verification limit | Shipping |
+| Host keys certified by a vendor root built into the SDK; single-use terminal activation codes | In progress |
+| Durable recovery of a sale whose host answer is lost (status query, reversal) | In progress |
 | PIN entry on the phone screen, test grade | Planned |
 | PIN entry for production, under PCI MPoC | Planned; needs certification |
 
