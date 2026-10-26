@@ -29,6 +29,22 @@ Every failure is a `SafeError`. Its `message` is short and safe to show, and it 
 | `ABI_MISMATCH` | The native library doesn't match this SDK build. | (A packaging error: reinstall.) |
 | `INTERNAL` | An unexpected internal error. | Contact support. |
 
+## `HostFailureReason`
+
+`AcceptState.HostFailure` means the sale did not complete with your host. Its `transactionId` and `stan` name the sale when a request was sent.
+
+| Reason | Meaning | Charged? | Suggested message |
+|---|---|---|---|
+| `NOT_CONFIGURED` | No host, key or activation is set up. | No | Payments are not set up on this device. |
+| `ENROLMENT` | The phone could not enrol with the host (for example it needs a new activation code). | No | Contact support. |
+| `TRANSPORT`, `TIMEOUT` | The host could not be reached before the request was sent, or it refused it with an HTTP error. | No | Try again. |
+| `REJECTED` | The host refused the request at a named security check (in `detail`). | No | Contact support. |
+| `UNDECIDED` | Not reported for a sent sale any more: an answer that cannot be checked is resolved by a status query instead. | No | Try again. |
+| `REVERSED` | The answer was lost, the outcome stayed unknown, and the SDK reversed the sale; the host confirmed it. | No | Not charged. Please pay again. |
+| `UNRESOLVED` | The answer was lost and the reversal is not confirmed yet. The SDK keeps sending it at every start and reports the end through `transactionListener`. | **Maybe** | The payment could not be confirmed. Do not pay again yet. |
+
+A lost answer is resolved before you are told: if the host approved the sale, you get `Complete`, not a failure.
+
 ## `AcceptOutcome`
 
 When the kernel ends a transaction, it gives an EMV Outcome:

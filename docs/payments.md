@@ -46,8 +46,32 @@ The SDK talks to your payment host itself. You configure where it is in the [con
 Your app never receives the card number, expiry, track data, cryptogram or the online request. It gets a `CardSummary` instead: scheme, application, masked card number (at most the first 6 and last 4 digits), amount and currency. The host side runs the gateway library we provide to licensed customers, which opens the sealed requests and connects to your processor.
 
 - Once the request has been sent, the sale can no longer be cancelled; its answer always reaches its own sale.
-- A transport problem ends as `HostFailure` (for example `TIMEOUT` or `TRANSPORT`) and never as an approval.
-- Release builds only talk to an `https` host whose key matches the pinned fingerprints.
+- A problem before the request is sent ends as `HostFailure` (for example `TRANSPORT` or `NOT_CONFIGURED`) and never as an approval.
+- Release builds only talk to an `https` host whose certified key matches the configured gateway (and the pins, if any).
+
+### When the host's answer is lost
+
+Every sale gets a transaction id and a STAN (the system trace audit number) before the card is read. Both are on the phone's storage before the request leaves; the STAN is the one in the authorisation message. Both come back on the result as `transactionId` and `stan`: print them on the receipt.
+
+If the answer does not arrive (a timeout, a dropped connection, a server error, or an answer that does not check out), the SDK does not guess. In the same sale it asks your host what became of that transaction, a few times over up to about 30 seconds, and reports:
+
+- `Complete` with `APPROVED` or `DECLINED` when the host knows the outcome;
+- `HostFailure` with `REVERSED` when the outcome stayed unknown and the SDK reversed the sale: nothing was charged; take the payment again;
+- `HostFailure` with `UNRESOLVED` when not even the reversal could be confirmed. The card may have been charged. Don't take the payment again until it is resolved: the SDK keeps sending the reversal each time it starts.
+
+The SDK never reports a failure for a sale the host said it approved. The record it keeps holds no card data, only the ids, amount, currency, times and state.
+
+Sales left open by a lost reversal, or by the app being closed mid-sale, are resumed in the background when the reader starts (the first `onResume`). Set a listener to hear how they end:
+
+```kotlin
+controller.transactionListener = TransactionListener { record ->
+    // record.transactionId, record.stan, record.amount, record.currency,
+    // record.state: RESOLVED (record.decision "approved" or "declined"), REVERSED or UNRESOLVED
+    reconcile(record)
+}
+```
+
+`controller.transactions()` lists the recorded sales (it reads storage: call it off the main thread). A sale still open after 24 hours is marked `UNRESOLVED` and no longer sent; reconcile it with your acquirer.
 
 ## 4. The result
 
@@ -56,7 +80,8 @@ Your app never receives the card number, expiry, track data, cryptogram or the o
 - `outcome`: `APPROVED` or `DECLINED`;
 - `responseCode` and `body`: from your host;
 - `recordsRead`;
-- `dataRecordDigest`: a hash you can use as a receipt reference. It is not card data.
+- `dataRecordDigest`: a hash you can use as a receipt reference. It is not card data;
+- `transactionId` and `stan`: the sale's identity with your host.
 
 After any result, the card connection ends and the controller returns to `WaitingForTag`, so the next sale always starts with a new tap. If the card read fails (for example the card is removed too early), the reader stays on: ask the customer to tap again.
 
@@ -71,5 +96,6 @@ This ends only the card run in progress for that `sessionId`. It returns `false`
 ## Threading and timeouts
 
 - Each controller runs one card exchange at a time. A second `runAccept` while one is running fails with `BUSY`.
+- The host call runs on its own thread: the next card can be tapped and read while the host is still answering the previous sale. Sales reach the host one after another.
 - Connecting to a card times out after 2 seconds. A single card command times out after about 5 seconds.
 - Removing the card mid-run gives `REMOVED`. Pausing the screen mid-run ends the run with no result.

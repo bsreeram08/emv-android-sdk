@@ -94,7 +94,7 @@ sequenceDiagram
 | Attestation checked at enrolment and on every payment (verified chain, hardware key, verified boot, app identity, revocation) | Shipping |
 | Phone-wallet sales above the cardholder verification limit | Shipping |
 | Host keys certified by a vendor root built into the SDK; single-use terminal activation codes; host key rotation without re-enrolment | Built; pending the vendor root ceremony and device verification |
-| Durable recovery of a sale whose host answer is lost (status query, reversal) | In progress |
+| Durable recovery of a sale whose host answer is lost: one transaction id and STAN per sale, a record kept before the request leaves, status query then reversal, resumed after a restart | Built; pending device verification |
 | PIN entry on the phone screen, test grade | Planned |
 | PIN entry for production, under PCI MPoC | Planned; needs certification |
 
