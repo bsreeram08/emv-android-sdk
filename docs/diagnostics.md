@@ -59,7 +59,8 @@ Events arrive on the main thread. They are built only when a listener is set, an
 `TapTimingReport` shows where one tap spent its time, from discovery to the last card answer. All times are in microseconds:
 
 - `discoveryMicros`, `connectMicros`, `readyToRunMicros`, `queueMicros`, `nativeStartMicros`: the stages before the first card command.
-- `apdus`: one entry per card command. Each entry has the instruction byte, the command and response lengths, the status word, the app's gap before the command, the radio time (`transceiveMicros`), and the kernel time (`nativeMicros`).
+- `transceiveMicros`: the total radio time.
+- `apdus`: empty in the release SDK, which keeps the card's command flow to itself. In the debug SDK there is one entry per card command, with the instruction byte, the command and response lengths, the status word, the app's gap before the command, the radio time and the kernel time (`nativeMicros`).
 - `cardMicros`: the total card time.
 - `appMicros`: the part the app and SDK add. It is everything except connecting and radio time.
 - `end`: `online`, or a failure name.

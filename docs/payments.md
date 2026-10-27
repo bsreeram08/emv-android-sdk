@@ -17,7 +17,19 @@ A profile you configure always draws a fresh unpredictable number for each trans
 
 **The test profile never reaches a real host.** `AcceptProfile.configure("")` selects the built-in test profile. It pins the unpredictable number so tests are repeatable, which means a cryptogram made with it could be replayed. The SDK refuses to send a sale made with it to any host except the simulated one, with `SafeError.SYNTHETIC_PROFILE`. If you never load a configuration, sales use built-in placeholder terminal data with a fresh unpredictable number; load your own profile before going live.
 
-## 2. Run the sale on the connected card
+## 2. Make sure the host can take the sale
+
+Call `prepareHost` after `onResume`, before you show amount entry. Ask for an amount only once it says the host is ready:
+
+```kotlin
+controller.prepareHost { notReady ->
+    if (notReady == null) showAmountEntry() else showHostNotReady(notReady)
+}
+```
+
+It runs off the main thread. If this phone isn't enrolled yet, it enrols, using the activation code. If the saved host key no longer verifies, it fetches a certified one. **The SDK never reads a card for a host that can't take the sale.** If you skip this step and the host isn't ready, `runAccept` ends with `SafeError.HOST_NOT_READY` before it sends the card a single command. Nothing is read and no tone plays.
+
+## 3. Run the sale on the connected card
 
 When `SessionState.Ready` arrives, call `runAccept`:
 
@@ -35,7 +47,7 @@ controller.runAccept(sessionId) { state ->
 
 The card part usually takes a fraction of a second. Ask the customer to hold the card still until you receive `OnlineRequest` or a failure. Every state carries the `sessionId` of its sale, so one handler can serve every sale safely.
 
-## 3. Your host
+## 4. Your host
 
 The SDK talks to your payment host itself. You configure where it is in the [configuration](configuration.md#host), and the SDK:
 
@@ -81,7 +93,7 @@ If the app is interrupted around the moment a result is shown:
 - an approval your app may already have shown is **never** reversed automatically: it is reported as `UNRESOLVED` so the merchant can check it;
 - results recovered at start reach whichever payment screen is open now, and wait until one is.
 
-## 4. The result
+## 5. The result
 
 `AcceptState.Complete` carries:
 
