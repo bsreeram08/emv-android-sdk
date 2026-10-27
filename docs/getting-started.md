@@ -47,6 +47,10 @@ class PayActivity : Activity() {
     override fun onResume() {
         super.onResume()
         controller.onResume(this)   // turns on reader mode
+        showConnecting()
+        controller.prepareHost { notReady ->   // enrols or refreshes the host key if needed
+            if (notReady == null) showAmountEntry() else showHostNotReady(notReady)
+        }
     }
 
     override fun onPause() {

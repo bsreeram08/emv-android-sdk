@@ -35,7 +35,7 @@ flowchart LR
 
 | Piece | What it does | What your app sees |
 |---|---|---|
-| **Reader** | Owns the phone's NFC reader. It runs one card at a time, enforces timeouts, ends a sale cleanly when the card leaves, and plays the tap sound and vibration. | Progress states and NFC diagnostics. Neither carries card data. |
+| **Reader** | Owns the phone's NFC reader. It runs one card at a time, enforces timeouts, ends a sale cleanly when the card leaves, and plays the tap sound and vibration. It reads no card unless the host can take the sale. | Progress states, NFC diagnostics and timing totals. None of them carries card data or the card's command flow. |
 | **Payment core** | Runs the EMV contactless transaction with the card, from selecting the application to the cryptogram. It runs in native code inside the SDK. | The stage it has reached, and the outcome. |
 | **Sealing** | Encrypts the whole online request for your host, inside the SDK, as soon as the card read ends. | Only a masked card summary: scheme, application, first 6 and last 4 digits, amount and currency. |
 | **Device key** | A signing key created in the phone's secure hardware (StrongBox or TEE). It never leaves the hardware, and it is enrolled with your host once, with hardware attestation. | Nothing. Only the terminal ID it was enrolled under. |
@@ -49,6 +49,9 @@ sequenceDiagram
   participant SDK as SDK
   participant Card as Card
   participant Host as Your host
+  App->>SDK: prepareHost()
+  SDK->>Host: enrol or refresh the certified host key, if needed
+  SDK-->>App: host ready: show amount entry
   App->>SDK: prepareSale(amount)
   Card->>SDK: tap
   SDK->>Card: EMV exchange (about 0.3 to 0.6 s)
@@ -65,6 +68,8 @@ sequenceDiagram
 
 **Card data**
 - The SDK's public API has no field that holds a full card number, expiry, track data, cryptogram or the cleartext online request. Your app gets a masked summary only.
+- The card's command exchange stays inside the SDK. A release build doesn't report commands, their sizes or the card's status codes to your app, only total timings.
+- No card is read unless the sale can be sent. The SDK checks that this phone is enrolled and holds a host key that verifies before it sends the card a single command. If it can't, the sale ends with `HOST_NOT_READY` and the card was never read.
 - The online request is encrypted inside the SDK with AES-256-GCM, under a key agreed for this transaction alone (ECDH P-256, then HKDF-SHA-256). Each request is bound to the terminal, a transaction number and a timestamp, and signed by the device key. A host can detect a replayed, altered or forwarded request.
 - The answer is encrypted under a key that only this request's exchange knows. An answer that doesn't decrypt, or names another transaction, is never treated as an approval.
 - The host's key must carry a certificate chain to a vendor root built into the SDK. The payment core verifies it and seals to no other key; configuration pins are an optional extra check. The SDK picks up a rotated host key by itself, without enrolling again.
@@ -90,6 +95,7 @@ sequenceDiagram
 | Area | Status |
 |---|---|
 | Sealed card data inside the SDK | Shipping |
+| Host readiness checked before amount entry and before any card read | Shipping |
 | Hardware device key with attestation at enrolment | Shipping |
 | Attestation checked at enrolment and on every payment (verified chain, hardware key, verified boot, app identity, revocation) | Shipping |
 | Phone-wallet sales above the cardholder verification limit | Shipping |

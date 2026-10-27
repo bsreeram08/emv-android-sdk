@@ -28,6 +28,9 @@ Every failure is a `SafeError`. Its `message` is short and safe to show, and it 
 | `COMMAND_TOO_LONG`, `INVALID_COMMAND` | A command can't be sent to this card. | Contact support. |
 | `ABI_MISMATCH` | The native library doesn't match this SDK build. | (A packaging error: reinstall.) |
 | `INTERNAL` | An unexpected internal error. | Contact support. |
+| `HOST_NOT_READY` | The host can't take a sale: the phone isn't enrolled, or it holds no host key that verifies. The card was not read. | Payments are being set up. Try again shortly. (Call `prepareHost`, and show amount entry only once it reports ready.) |
+| `UNTRUSTED_HOST` | The host's key isn't certified by a root built into the SDK, has expired, or matches none of your pins. Nothing was sent. | Contact support. |
+| `SYNTHETIC_PROFILE` | The built-in test profile was used with a real host. Nothing was sent. | (An app bug: load your own profile.) |
 
 ## `HostFailureReason`
 

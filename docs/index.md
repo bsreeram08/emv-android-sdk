@@ -29,6 +29,7 @@ This site and the [issue tracker](https://github.com/bsreeram08/emv-android-sdk/
 | Part | What it does |
 |---|---|
 | `NfcSessionController` | Owns reader mode, the card connection, timeouts, and one card run at a time. |
+| `prepareHost` | Checks that your host can take a sale before you ask for an amount. It enrols the phone or fetches a new host key if needed. The SDK reads no card until the host is ready. |
 | `runAccept` | Runs a contactless sale end to end: card read, sealed request to your host, sealed answer. Your app sees progress, a masked card and the result. |
 | `EmvSdk` | Configures the whole SDK from one JSON document (terminal profile and tap feedback). You can swap it live, with no restart. |
 | `TapCue` | Plays the EMV Book A success and alert tones, each with a vibration. You can switch either off. |
