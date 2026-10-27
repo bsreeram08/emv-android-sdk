@@ -73,7 +73,13 @@ controller.transactionListener = TransactionListener { record ->
 }
 ```
 
-`controller.transactions()` lists the recorded sales (it reads storage: call it off the main thread). A sale still open after 24 hours is marked `UNRESOLVED` and no longer sent; reconcile it with your acquirer.
+`controller.transactions()` lists the recorded sales (it reads storage: call it off the main thread). A sale is only given up as `UNRESOLVED` after at least 6 status or reversal attempts and 48 hours (the gateway's retention); a changed phone clock alone never does it. Reconcile those with your acquirer.
+
+If the app is interrupted around the moment a result is shown:
+
+- an approval the SDK knows never reached your app is reversed at the next start (`approvedThenReversed`);
+- an approval your app may already have shown is **never** reversed automatically: it is reported as `UNRESOLVED` so the merchant can check it;
+- results recovered at start reach whichever payment screen is open now, and wait until one is.
 
 ## 4. The result
 
